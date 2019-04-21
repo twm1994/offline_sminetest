@@ -71,7 +71,7 @@ struct NodeToAdd {
 		pos = p;
 		node = n;
 	}
-	~NodeToAdd(){
+	~NodeToAdd() {
 		delete &pos;
 		delete &node;
 	}
@@ -110,8 +110,13 @@ public:
 //	core::list<Player*> getPlayers();
 	core::list<Npc*> getNpcs();
 	// -----For loading and saving map-----
-	void loadMap();
+//	void loadMap();
 	void saveMap();
+
+	bool isLoading() {
+		return m_env.getMap().isLoading();
+	}
+
 private:
 //	void ReceiveAll();
 //	void Receive();

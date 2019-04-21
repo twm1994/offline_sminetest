@@ -11,7 +11,6 @@ namespace jthread {
 } // JThread 1.2 support
 using namespace jthread;
 // JThread 1.3 support
-#include <iostream>
 #include <malloc.h>
 
 #ifdef _WIN32
@@ -21,7 +20,7 @@ using namespace jthread;
 #include <unistd.h>
 #define sleep_s(x) sleep(x)
 #endif
-
+#include "main.h"
 #include "common_irrlicht.h"
 #include "loadstatus.h"
 #include "mapnode.h"
@@ -93,7 +92,10 @@ protected:
 	// Be sure to set this to NULL when the cached sector is deleted
 	MapSector *m_sector_cache;
 	v2s16 m_sector_cache_p;
+	// -----Store created nodes-----
 	core::map<v3s16, s16> m_nodes;
+	// -----handle background loading-----
+	bool is_loading;
 public:
 	v3s16 drawoffset;
 	//LoadStatus status;
@@ -207,13 +209,14 @@ public:
 			throw InvalidPositionException();
 		v3s16 relpos = p - blockpos * MAP_BLOCKSIZE;
 		blockref->setNode(relpos, n);
-		if(n.d<254)
+		if (n.d < MATERIAL_AIR)
 			m_nodes.insert(p, getNodeType(n.d));
-		else{
+		else {
 			// Don't save air node
 			core::map<v3s16, s16>::Node *n = m_nodes.find(p);
 			if (n != NULL) {
-				m_nodes.delink(p);
+//				m_nodes.delink(p);
+				m_nodes.remove(n);
 			}
 		}
 	}
@@ -286,7 +289,7 @@ public:
 	 void generateMaster();*/
 	bool updateChangedVisibleArea();
 	void renderMap(video::IVideoDriver* driver, video::SMaterial *materials);
-	// -----load map from m_nodes to m_map----
+	// -----Initialize m_map----
 	void setSectors();
 	MapBlock * setBlockNodes(bool atBottom, v3s16 pos);
 	void addBoundary();
@@ -294,6 +297,19 @@ public:
 	void addIgnoreNodesX(s16 blockZ, s16 z);
 //	MapBlock* getIgnoreNodesTop(v3s16 pos);
 	void save();
+	// -----Check if is loading created nodes in MapUpdateThread-----
+	bool isLoading() {
+		return is_loading;
+	}
+
+	void setLoading(bool s) {
+		is_loading = s;
+	}
+
+	void addCreatedNodes();
+	void load() {
+		setLoading(true);
+	}
 };
 
 class Client;

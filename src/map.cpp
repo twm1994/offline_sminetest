@@ -41,8 +41,14 @@ using namespace jthread;
 void * MapUpdateThread::Thread() {
 	if (map == NULL)
 		return NULL;
-
 	ThreadStarted();
+	// -----Generate map in background at start up-----
+	if (map->isLoading()) {
+		map->addBoundary();
+		map->setSectors();
+		map->addCreatedNodes();
+		map->setLoading(false);
+	}
 
 	while (getRun()) {
 //		std::cout<<"##########UpdateThread running##########"<<std::endl;
@@ -991,6 +997,7 @@ void Map::addIgnoreNodesX(s16 blockZ, s16 z) {
 //	}
 //	return mapBlock;
 //}
+
 void Map::save() {
 	Json::StreamWriterBuilder builder;
 	builder.settings_["indentation"] = ""; // Write in one line
@@ -1027,12 +1034,37 @@ void Map::save() {
 	}
 	dout_map << "-----# nodes saved: " << node_count << "-----" << std::endl;
 	std::cout << "-----# nodes saved: " << node_count << "-----" << std::endl;
-	std::ofstream ofs("flat_map.json");
+	std::ofstream ofs("created_nodes.json");
 	writer->write(map, &ofs);
 	time_t t1 = time(nullptr);
 	dout_map << "-----Map saving time: " << difftime(t1, t0) << "-----"
 			<< std::endl;
 	std::cout << "-----Map saving time: " << difftime(t1, t0) << "-----"
+			<< std::endl;
+}
+
+void Map::addCreatedNodes() {
+	std::ifstream ifs("created_nodes.json");
+	Json::CharReaderBuilder reader;
+	Json::Value map;
+	JSONCPP_STRING errs;
+	Json::parseFromStream(reader, ifs, &map, &errs);
+	dout_map << "-----Loading nodes from file" << std::endl;
+	std::cout << "-----Loading nodes from file" << std::endl;
+	time_t t0 = time(nullptr);
+	for (Json::Value::const_iterator i = map.begin(); i != map.end(); i++) {
+		Json::Value pos = (*i)["0"];
+		v3s16 nodePos = v3s16(pos[0].asInt(), pos[1].asInt(), pos[2].asInt());
+		s16 d = (*i)["1"].asInt();
+		m_nodes.insert(nodePos, d);
+		MapNode n;
+		n.d = d;
+		setNode(nodePos, n);
+	}
+	time_t t1 = time(nullptr);
+	dout_map << "-----Nodes loading time: " << difftime(t1, t0) << "-----"
+			<< std::endl;
+	std::cout << "-----Nodes loading time: " << difftime(t1, t0) << "-----"
 			<< std::endl;
 }
 

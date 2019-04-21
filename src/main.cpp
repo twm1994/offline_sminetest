@@ -21,11 +21,10 @@ namespace jthread {
 } // JThread 1.2 support
 using namespace jthread;
 // JThread 1.3 support
-#include "common_irrlicht.h"
+#include "main.h"
 #include "map.h"
 #include "player.h"
 #include "npc.h"
-#include "main.h"
 #include "environment.h"
 //#include "server.h"
 #include "client.h"
@@ -229,23 +228,19 @@ int main() {
 	IrrlichtDevice *device;
 	device = createDevice(driverType, core::dimension2d<u32>(screenW, screenH),
 			16, false, false, false, &receiver);
-
 	if (device == 0) {
 		std::cout << "Could not create selected driver." << std::endl;
 		return 1; // could not create selected driver.
 	}
-	/*
-	 Continue initialization
-	 */
 	video::IVideoDriver* driver = device->getVideoDriver();
 	scene::ISceneManager* smgr = device->getSceneManager();
 	gui::IGUIEnvironment* guienv = device->getGUIEnvironment();
 
 	// -----Pause menu-----
-	video::ITexture* image = driver->getTexture("../data/pause.png");
+	video::ITexture* pauseImage = driver->getTexture("../data/pause.png");
 	u16 imgWidth = 600;
 	u16 imgHeight = 600;
-	gui::IGUIImage* pauseOverlay = guienv->addImage(image,
+	gui::IGUIImage* pauseOverlay = guienv->addImage(pauseImage,
 			core::position2d<int>(screenW / 2 - imgWidth / 2,
 					screenH / 2 - imgHeight / 2));
 	pauseOverlay->setVisible(false);
@@ -257,7 +252,6 @@ int main() {
 	skin->setColor(gui::EGDC_BUTTON_TEXT, video::SColor(255, 255, 255, 255));
 	skin->setColor(gui::EGDC_3D_HIGH_LIGHT, video::SColor(255, 0, 0, 0));
 	skin->setColor(gui::EGDC_3D_SHADOW, video::SColor(255, 0, 0, 0));
-
 	const wchar_t *text = L"Loading...";
 	core::vector2d<s32> center(screenW / 2, screenH / 2);
 	core::dimension2d<u32> textd = font->getDimension(text);
@@ -266,20 +260,13 @@ int main() {
 	//core::vector2d<s32> textsize(textd.Width+4, textd.Height);
 	core::vector2d<s32> textsize(300, textd.Height);
 	core::rect<s32> textrect(center - textsize / 2, center + textsize / 2);
-
 	gui::IGUIStaticText *gui_loadingtext = guienv->addStaticText(text, textrect,
 			false, false);
 	gui_loadingtext->setTextAlignment(gui::EGUIA_CENTER, gui::EGUIA_UPPERLEFT);
-
-	driver->beginScene(true, true, video::SColor(255, 255, 255, 255));
-	guienv->drawAll();
-	driver->endScene();
-
 	video::SMaterial materials[MATERIALS_COUNT];
 	for (u16 i = 0; i < MATERIALS_COUNT; i++) {
 		materials[i].Lighting = false;
 		materials[i].BackfaceCulling = false;
-
 		const char *filename = g_material_filenames[i];
 		if (filename != NULL) {
 			video::ITexture *t = driver->getTexture(filename);
@@ -309,6 +296,19 @@ int main() {
 //		}
 		std::cout << "Creating client" << std::endl;
 		Client client(smgr, materials); //this will create local player
+		video::ITexture* loadingImage = driver->getTexture("../data/loading.png");
+		u16 imgWidth = 600;
+		u16 imgHeight = 600;
+		gui::IGUIImage* loadingOverlay = guienv->addImage(loadingImage,
+				core::position2d<int>(screenW / 2 - imgWidth / 2,
+						screenH / 2 - imgHeight / 2));
+		// -----Display the loading image while map is loading in background-----
+		while(client.isLoading()){
+			loadingOverlay->setVisible(true);
+			driver->beginScene(true, true, video::SColor(255, 255, 255, 255));
+			guienv->drawAll();
+			driver->endScene();
+		}
 //		Address connect_address(0, 0, 0, 0, port);
 //		try {
 //			connect_address.Resolve(connect_name);
@@ -317,14 +317,11 @@ int main() {
 //			return 0;
 //		}
 //		client.connect(connect_address);
-				// -----Test load map-----
-//		u32 timestart = device->getTimer()->getTime();
-//		server->loadMap();
-//		client.loadMap();
-//		u32 timeLoaded = device->getTimer()->getTime();
-//		std::cout << "----------Time used: " << timeLoaded - timestart
-//				<< std::endl;
-//		device->getTimer()->stop();
+		loadingOverlay->setVisible(false);
+		loadingOverlay->remove();
+		driver->beginScene(true, true, video::SColor(255, 255, 255, 255));
+		guienv->drawAll();
+		driver->endScene();
 		player = client.getLocalPlayer();
 		player->animateStand();
 		// Create the camera node
@@ -643,8 +640,10 @@ int main() {
 						u32 time1 = device->getTimer()->getRealTime();
 						MapNode n;
 						n.d = g_selected_material;
-						dout_client << "main() receive right click at (" << nodepos.X << ","
-								<< nodepos.Y << "," << nodepos.Z << "), type:" << int(n.d) << std::endl;
+						dout_client << "main() receive right click at ("
+								<< nodepos.X << "," << nodepos.Y << ","
+								<< nodepos.Z << "), type:" << int(n.d)
+								<< std::endl;
 						dout_client.flush();
 						client.addNode(neighbourpos, n);
 						u32 time2 = device->getTimer()->getRealTime();

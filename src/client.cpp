@@ -44,8 +44,10 @@ Client::Client(scene::ISceneManager* smgr, video::SMaterial *materials) :
 	m_env_mutex.Init();
 	{
 		JMutexAutoLock envlock(m_env_mutex);
-		loadMap();
+//		loadMap();
 		m_env.getMap().StartUpdater();
+		std::cout << "-----Client::Client() generating map-----" << std::endl;
+		m_env.getMap().load();
 		Player *player = new Player(true, smgr->getRootSceneNode(), smgr, 0);
 		//f32 y = BS*2 + m_env.getMap().getGroundHeight(v2s16(0,0));
 		f32 y = BS * 2 + BS * 20;
@@ -517,7 +519,7 @@ void Client::removeNode(v3s16 nodepos) {
 		return;
 	}
 	//-----Avoid destroying boundary and base level-----
-	if (node.d != MATERIAL_IGNORE && nodepos.Y!=MAP_BOTTOM) {
+	if (node.d != MATERIAL_IGNORE && nodepos.Y != MAP_BOTTOM) {
 		// -----Add to m_remove_cache to handle removeNode event-----
 		m_remove_cache.push_back(nodepos);
 		dout_client << "Client::removeNode() add cache: (" << nodepos.X << ","
@@ -657,7 +659,7 @@ core::list<Npc*> Client::getNpcs() {
 	return m_env.getNpcs();
 }
 
-void Client::loadMap() {
+//void Client::loadMap() {
 //	std::ifstream ifs("gened_map.json");
 //	Json::CharReaderBuilder reader;
 //	Json::Value map;
@@ -669,10 +671,10 @@ void Client::loadMap() {
 //		s16 d = (*i)["1"].asInt();
 //		m_nodes.insert(nodePos, d);
 //	}
-	std::cout << "-----Generating map-----" << std::endl;
-	m_env.getMap().addBoundary();
-	m_env.getMap().setSectors();
-}
+//	std::cout << "-----Client::loadMap() generating map-----" << std::endl;
+	//	m_env.getMap().addBoundary();
+//	m_env.getMap().setSectors();
+//}
 
 void Client::saveMap() {
 	m_env.getMap().save();
