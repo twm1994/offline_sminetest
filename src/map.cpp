@@ -3,13 +3,9 @@
  */
 
 #include "map.h"
-//#include "player.h"
 #include "main.h"
 #include <jmutexautolock.h>
-namespace jthread {
-} // JThread 1.2 support
 using namespace jthread;
-// JThread 1.3 support
 #include "client.h"
 
 #ifdef _WIN32

@@ -7,10 +7,8 @@
 
 #include <jmutex.h>
 #include <jthread.h>
-namespace jthread {
-} // JThread 1.2 support
 using namespace jthread;
-// JThread 1.3 support
+#include <iostream>
 #include <malloc.h>
 
 #ifdef _WIN32
@@ -20,7 +18,7 @@ using namespace jthread;
 #include <unistd.h>
 #define sleep_s(x) sleep(x)
 #endif
-#include "main.h"
+//#include "main.h"
 #include "common_irrlicht.h"
 #include "loadstatus.h"
 #include "mapnode.h"

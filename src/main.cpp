@@ -17,14 +17,12 @@
 #include <iostream>
 #include <time.h>
 #include <jmutexautolock.h>
-namespace jthread {
-} // JThread 1.2 support
 using namespace jthread;
-// JThread 1.3 support
-#include "main.h"
+#include "common_irrlicht.h"
 #include "map.h"
 #include "player.h"
 #include "npc.h"
+#include "main.h"
 #include "environment.h"
 //#include "server.h"
 #include "client.h"
@@ -297,8 +295,6 @@ int main() {
 		std::cout << "Creating client" << std::endl;
 		Client client(smgr, materials); //this will create local player
 		video::ITexture* loadingImage = driver->getTexture("../data/loading.png");
-		u16 imgWidth = 600;
-		u16 imgHeight = 600;
 		gui::IGUIImage* loadingOverlay = guienv->addImage(loadingImage,
 				core::position2d<int>(screenW / 2 - imgWidth / 2,
 						screenH / 2 - imgHeight / 2));

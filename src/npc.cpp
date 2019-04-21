@@ -13,7 +13,6 @@ Npc::Npc(scene::ISceneNode* parent, scene::ISceneManager* mgr, s32 id) :
 		avatar_node->setMaterialFlag(video::EMF_LIGHTING, false);
 		avatar_node->setMaterialTexture(0,
 				driver->getTexture("../data/character.png"));
-		avatar_node->setMaterialType(video::EMT_TRANSPARENT_ALPHA_CHANNEL);
 		avatar_node->setFrameLoop(200, 220);
 		avatar_node->setAnimationSpeed(8);
 		// this->animateStand();

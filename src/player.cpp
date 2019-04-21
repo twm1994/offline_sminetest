@@ -30,7 +30,6 @@ Player::Player(bool is_local, scene::ISceneNode* parent,
 	avatar_node = mgr->addAnimatedMeshSceneNode(avatar, this);
 	if (avatar_node) {
 		avatar_node->setMaterialFlag(video::EMF_LIGHTING, false);
-		avatar_node->setMaterialType(video::EMT_TRANSPARENT_ALPHA_CHANNEL);
 		avatar_node->setMaterialTexture(0,
 				driver->getTexture("../data/character.png"));
 		//avatar_node->setFrameLoop(168,188);
