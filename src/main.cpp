@@ -574,7 +574,7 @@ int main() {
 								}
 							} catch (InvalidPositionException &e) {
 								continue;
-									}
+							}
 							v3s16 np(x, y, z);
 							v3f npf = Map::intToFloat(np);
 							f32 d = 0.01;
@@ -611,10 +611,10 @@ int main() {
 										nodefacebox = facebox;
 									}
 								}
-									}
-								}
 							}
 						}
+					}
+				}
 				if (nodefound) {
 					static v3s16 nodepos_old(-1, -1, -1);
 					if (nodepos != nodepos_old) {
@@ -729,7 +729,7 @@ int main() {
 				 else
 				 device->yield();*/
 			} // if (receiver.isPaused) {} else
-				}
+		}
 		// ----Save the map at exit-----
 		client.saveMap();
 //		server->saveMap();
