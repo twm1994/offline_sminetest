@@ -294,17 +294,21 @@ int main() {
 //		}
 		std::cout << "Creating client" << std::endl;
 		Client client(smgr, materials); //this will create local player
-		video::ITexture* loadingImage = driver->getTexture("../data/loading.png");
-		gui::IGUIImage* loadingOverlay = guienv->addImage(loadingImage,
-				core::position2d<int>(screenW / 2 - imgWidth / 2,
-						screenH / 2 - imgHeight / 2));
-		// -----Display the loading image while map is loading in background-----
-		while(client.isLoading()){
-			loadingOverlay->setVisible(true);
-			driver->beginScene(true, true, video::SColor(255, 255, 255, 255));
-			guienv->drawAll();
-			driver->endScene();
-		}
+//		video::ITexture* loadingImage = driver->getTexture(
+//				"../data/loading.png");
+//		gui::IGUIImage* loadingOverlay = guienv->addImage(loadingImage,
+//				core::position2d<int>(screenW / 2 - imgWidth / 2,
+//						screenH / 2 - imgHeight / 2));
+//		// -----Display the loading image while map is loading in background-----
+//		std::cout << "Loading map" << std::endl;
+//		while (client.isLoading()) {
+////			std::cout << "-";
+////			std::cout.flush();
+//			loadingOverlay->setVisible(true);
+//			driver->beginScene(true, true, video::SColor(0, 200, 200, 200));
+//			guienv->drawAll();
+//			driver->endScene();
+//		}
 //		Address connect_address(0, 0, 0, 0, port);
 //		try {
 //			connect_address.Resolve(connect_name);
@@ -313,8 +317,8 @@ int main() {
 //			return 0;
 //		}
 //		client.connect(connect_address);
-		loadingOverlay->setVisible(false);
-		loadingOverlay->remove();
+//		loadingOverlay->setVisible(false);
+//		loadingOverlay->remove();
 		driver->beginScene(true, true, video::SColor(255, 255, 255, 255));
 		guienv->drawAll();
 		driver->endScene();
@@ -570,7 +574,7 @@ int main() {
 								}
 							} catch (InvalidPositionException &e) {
 								continue;
-							}
+									}
 							v3s16 np(x, y, z);
 							v3f npf = Map::intToFloat(np);
 							f32 d = 0.01;
@@ -589,7 +593,8 @@ int main() {
 									core::CMatrix4<f32> m;
 									m.buildRotateFromTo(v3f(0, 0, 1), dir_f);
 									// This is the back face
-									v3f corners[2] = { v3f(BS / 2, BS / 2,
+									v3f corners[2] = { v3f(BS / 2,
+									BS / 2,
 									BS / 2), v3f(-BS / 2, -BS / 2,
 									BS / 2 + d) };
 									for (u16 j = 0; j < 2; j++) {
@@ -606,10 +611,10 @@ int main() {
 										nodefacebox = facebox;
 									}
 								}
+									}
+								}
 							}
 						}
-					}
-				}
 				if (nodefound) {
 					static v3s16 nodepos_old(-1, -1, -1);
 					if (nodepos != nodepos_old) {
@@ -724,7 +729,7 @@ int main() {
 				 else
 				 device->yield();*/
 			} // if (receiver.isPaused) {} else
-		}
+				}
 		// ----Save the map at exit-----
 		client.saveMap();
 //		server->saveMap();

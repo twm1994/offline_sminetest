@@ -1,6 +1,7 @@
 ## Generic ignorable patterns and files
 .*
 !.settings/
+!.cproject
 !.project
 !.gitignore
 *~
@@ -50,5 +51,6 @@ client_server_change.txt
 ## Dynamic files
 Backup/
 Debug/
+!*.dll
 Release/
 build-output/

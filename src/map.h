@@ -208,7 +208,7 @@ public:
 		v3s16 relpos = p - blockpos * MAP_BLOCKSIZE;
 		blockref->setNode(relpos, n);
 		if (n.d < MATERIAL_AIR)
-			m_nodes.insert(p, getNodeType(n.d));
+			m_nodes.insert(p, s16(n.d));
 		else {
 			// Don't save air node
 			core::map<v3s16, s16>::Node *n = m_nodes.find(p);
@@ -217,24 +217,6 @@ public:
 				m_nodes.remove(n);
 			}
 		}
-	}
-
-	s16 getNodeType(u8 node) {
-		s16 nodeType;
-		switch (node) {
-		case MATERIAL_STONE:
-			nodeType = 0;
-			break;
-		case MATERIAL_GRASS:
-			nodeType = 1;
-			break;
-		case MATERIAL_IGNORE:
-			nodeType = 255;
-			break;
-		default:
-			nodeType = 254;
-		}
-		return nodeType;
 	}
 
 	void setNode(s16 x, s16 y, s16 z, MapNode & n) {
@@ -307,6 +289,12 @@ public:
 	void addCreatedNodes();
 	void load() {
 		setLoading(true);
+		// -----Generate map in background at start up-----
+		std::cout << "Map::load() loading map" << std::endl;
+		addBoundary();
+		setSectors();
+		addCreatedNodes();
+		setLoading(false);
 	}
 };
 
