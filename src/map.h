@@ -35,13 +35,7 @@ using namespace jthread;
 #define MAP_HEIGHT 4
 // Lowest level of map
 #define MAP_BOTTOM 0
-/*
-
- TODO: Automatically unload blocks from memory and save on disk
- when they are far away
- */
-
-//void limitBox(core::aabbox3d<s16> & box, core::aabbox3d<s16> & limits);
+#define CLIENT_MAP_FILE "client_nodes.json"
 class Map;
 
 class MapUpdateThread: public JThread {
@@ -228,31 +222,6 @@ public:
 		return getNode(floatToInt(p));
 	}
 
-//	void drawbox(s16 x0, s16 y0, s16 z0, s16 w, s16 h, s16 d, MapNode node)
-//	{
-//		x0 += drawoffset.X;
-//		y0 += drawoffset.Y;
-//		z0 += drawoffset.Z;
-//		for(u16 z=0; z<d; z++)
-//			for(u16 y=0; y<h; y++)
-//				for(u16 x=0; x<w; x++)
-//					setNode(x0+x, y0+y, z0+z, node);
-//	}
-//
-//	void drawslope(s16 x0, s16 y0, s16 z0, s16 w, s16 h, s16 d, s16 dy_x, s16 dy_z, MapNode node)
-//	{
-//		x0 += drawoffset.X;
-//		y0 += drawoffset.Y;
-//		z0 += drawoffset.Z;
-//		for(u16 z=0; z<d; z++){
-//			for(u16 x=0; x<w; x++){
-//				for(u16 y=0; y < h + z*dy_z + x*dy_x; y++){
-//					setNode(x0+x, y0+y, z0+z, node);
-//				}
-//			}
-//		}
-//	}
-
 	void unLightNeighbors(v3s16 pos, f32 oldlight,
 			core::list<v3s16> & light_sources,
 			core::map<v3s16, MapBlock*> & modified_blocks);
@@ -266,8 +235,6 @@ public:
 	void nodeAddedUpdate(v3s16 p, f32 light);
 	void removeNodeAndUpdate(v3s16 p);
 	core::aabbox3d<s16> getDisplayedBlockArea();
-	/*void generateBlock(MapBlock *block);
-	 void generateMaster();*/
 	bool updateChangedVisibleArea();
 	void renderMap(video::IVideoDriver* driver, video::SMaterial *materials);
 	// -----Initialize m_map----
@@ -276,8 +243,7 @@ public:
 	void addBoundary();
 	void addIgnoreNodesZ(s16 blockX, s16 x);
 	void addIgnoreNodesX(s16 blockZ, s16 z);
-//	MapBlock* getIgnoreNodesTop(v3s16 pos);
-	void save();
+	void save(const char* fname);
 	// -----Check if is loading created nodes in MapUpdateThread-----
 	bool isLoading() {
 		return is_loading;
@@ -288,15 +254,21 @@ public:
 	}
 
 	void addCreatedNodes();
-	void load() {
+	void load(const char* fname) {
 		setLoading(true);
 		// -----Generate map in background at start up-----
 		std::cout << "Map::load() loading map" << std::endl;
 		addBoundary();
-		setSectors();
-		addCreatedNodes();
+//		setSectors();
+		loadCreatedNodes(fname);
 		setLoading(false);
 	}
+
+	void loadCreatedNodes(const char* fname);
+	MapBlock *fillBlockNodes(v3s16 pos);
+	MapSector* fillSector(v2s16 pos);
+	MapSector * getSector(v2s16 pos);
+	MapBlock * getBlock(v3s16 pos);
 };
 
 class Client;
@@ -326,21 +298,9 @@ public:
 		return m_box;
 	}
 
-	/*virtual u32 getMaterialCount() const
-	 {
-	 return 1;
-	 }
-
-	 virtual video::SMaterial& getMaterial(u32 i)
-	 {
-	 return materials[0];
-	 }*/
-
 private:
 	Client *m_client;
-
 	video::SMaterial *m_materials;
-
 	core::aabbox3d<f32> m_box;
 };
 

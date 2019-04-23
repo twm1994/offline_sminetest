@@ -24,7 +24,6 @@ using namespace jthread;
 #include "npc.h"
 #include "main.h"
 #include "environment.h"
-//#include "server.h"
 #include "client.h"
 #include <string>
 
@@ -144,34 +143,31 @@ void updateViewingRange(f32 frametime) {
 		counter -= frametime;
 		return;
 	}
-//	counter = 5.0; //seconds
-//
-//	g_viewing_range_nodes_mutex.Lock();
-//	bool changed = false;
-//	if (frametime > 1.0 / FPS_MIN
-//			|| g_viewing_range_nodes > VIEWING_RANGE_NODES_MAX) {
-//		if (g_viewing_range_nodes > VIEWING_RANGE_NODES_MIN) {
-//			g_viewing_range_nodes -= MAP_BLOCKSIZE / 2;
-//			changed = true;
-//		}
-//	} else if (frametime < 1.0 / FPS_MAX
-//			|| g_viewing_range_nodes < VIEWING_RANGE_NODES_MIN) {
-//		if (g_viewing_range_nodes < VIEWING_RANGE_NODES_MAX) {
-//			g_viewing_range_nodes += MAP_BLOCKSIZE / 2;
-//			changed = true;
-//		}
-//	}
-//	if (changed) {
-//		std::cout << "g_viewing_range_nodes = " << g_viewing_range_nodes
-//				<< std::endl;
-//	}
+	counter = 5.0; //seconds
+	g_viewing_range_nodes_mutex.Lock();
+	bool changed = false;
+	if (frametime > 1.0 / FPS_MIN
+			|| g_viewing_range_nodes > VIEWING_RANGE_NODES_MAX) {
+		if (g_viewing_range_nodes > VIEWING_RANGE_NODES_MIN) {
+			g_viewing_range_nodes -= MAP_BLOCKSIZE / 2;
+			changed = true;
+		}
+	} else if (frametime < 1.0 / FPS_MAX
+			|| g_viewing_range_nodes < VIEWING_RANGE_NODES_MIN) {
+		if (g_viewing_range_nodes < VIEWING_RANGE_NODES_MAX) {
+			g_viewing_range_nodes += MAP_BLOCKSIZE / 2;
+			changed = true;
+		}
+	}
+	if (changed) {
+		std::cout << "g_viewing_range_nodes = " << g_viewing_range_nodes
+				<< std::endl;
+	}
 	g_viewing_range_nodes_mutex.Unlock();
 #endif
 }
 
 int main() {
-//	sockets_init();
-//	atexit (sockets_cleanup);
 	/*
 	 Initialization
 	 */
@@ -179,50 +175,18 @@ int main() {
 	g_viewing_range_nodes_mutex.Init();
 	assert(g_viewing_range_nodes_mutex.IsInitialized());
 	MyEventReceiver receiver;
-	// create device and exit if creation failed
-
-	/*
-	 Host selection
-	 */
-//	char connect_name[100];
-	// std::cout<<std::endl<<std::endl;
-	// std::cout<<"Address to connect to [empty = host a game]: ";
-	// std::cin.getline(connect_name, 100);
-//	bool hosting = false;
-	// if(connect_name[0] == 0){
-	// 	snprintf(connect_name, 100, "127.0.0.1");
-	// 	hosting = true;
-	// }
-	// std::cout<<"-> "<<connect_name<<std::endl;
-	// std::cout<<"Port [empty=30000]: ";
-	// char templine[100];
-	// std::cin.getline(templine, 100);
-//	unsigned short port;
-	// if(templine[0] == 0)
-	// 	port = 30000;
-	// else
-	// 	port = atoi(templine);
-//
-//	std::cout << "Address to connect to [empty = host a game]: ";
-//	snprintf(connect_name, 100, "127.0.0.1");
-//	std::cout << "-> " << connect_name << std::endl;
-//	port = 30000;
-//	hosting = true;
 	/*
 	 Resolution selection
 	 */
-
 	u16 screenW = 800;
 	u16 screenH = 600;
 	video::E_DRIVER_TYPE driverType;
-
 #ifdef _WIN32
-	//driverType = video::EDT_DIRECT3D9; // Doesn't seem to work
 	driverType = video::EDT_OPENGL;
 #else
 	driverType = video::EDT_OPENGL;
 #endif
-
+	// create device and exit if creation failed
 	IrrlichtDevice *device;
 	device = createDevice(driverType, core::dimension2d<u32>(screenW, screenH),
 			16, false, false, false, &receiver);
@@ -233,7 +197,6 @@ int main() {
 	video::IVideoDriver* driver = device->getVideoDriver();
 	scene::ISceneManager* smgr = device->getSceneManager();
 	gui::IGUIEnvironment* guienv = device->getGUIEnvironment();
-
 	// -----Pause menu-----
 	video::ITexture* pauseImage = driver->getTexture("../data/pause.png");
 	u16 imgWidth = 600;
@@ -275,50 +238,13 @@ int main() {
 			}
 			materials[i].setTexture(0, driver->getTexture(filename));
 		}
-		//materials[i].setFlag(video::EMF_TEXTURE_WRAP, video::ETC_REPEAT);
 		materials[i].setFlag(video::EMF_BILINEAR_FILTER, false);
-		//materials[i].setFlag(video::EMF_ANISOTROPIC_FILTER, false);
 	}
-
 	// Make a scope here for the client so that it gets removed
-	// before the irrlicht device
+	// before the Irrlicht device
 	{
-
-//		std::cout << "Creating server and client" << std::endl;
-//		Server *server = NULL;
-//		if (hosting) {
-//			//server inits m_env, m_env inits MasterMap
-//			//MasterMap inheritates Map, Map inits with camera_position,camera_direction,updater,m_heightmap,m_sector_cache,m_hwrapper,drawoffset
-//			server = new Server();
-//			server->start(port);
-//		}
 		std::cout << "Creating client" << std::endl;
 		Client client(smgr, materials); //this will create local player
-//		video::ITexture* loadingImage = driver->getTexture(
-//				"../data/loading.png");
-//		gui::IGUIImage* loadingOverlay = guienv->addImage(loadingImage,
-//				core::position2d<int>(screenW / 2 - imgWidth / 2,
-//						screenH / 2 - imgHeight / 2));
-//		// -----Display the loading image while map is loading in background-----
-//		std::cout << "Loading map" << std::endl;
-//		while (client.isLoading()) {
-////			std::cout << "-";
-////			std::cout.flush();
-//			loadingOverlay->setVisible(true);
-//			driver->beginScene(true, true, video::SColor(0, 200, 200, 200));
-//			guienv->drawAll();
-//			driver->endScene();
-//		}
-//		Address connect_address(0, 0, 0, 0, port);
-//		try {
-//			connect_address.Resolve(connect_name);
-//		} catch (ResolveError &e) {
-//			std::cout << "Couldn't resolve address" << std::endl;
-//			return 0;
-//		}
-//		client.connect(connect_address);
-//		loadingOverlay->setVisible(false);
-//		loadingOverlay->remove();
 		driver->beginScene(true, true, video::SColor(255, 255, 255, 255));
 		guienv->drawAll();
 		driver->endScene();
@@ -414,12 +340,7 @@ int main() {
 				else
 					dtime = 0;
 				lasttime = time;
-
 				updateViewingRange(dtime);
-
-				// Collected during the loop and displayed
-//				core::list<core::aabbox3d<f32> > hilightboxes;
-
 				v3f zoom_direction = v3f(0, 0, 1);
 				zoom_direction.rotateXZBy(camera_yaw);
 				/*Camera zoom*/
@@ -466,8 +387,6 @@ int main() {
 				}
 				if (receiver.IsKeyDown(irr::KEY_SPACE)) {
 					if (player->touching_ground) {
-						//player_speed.Y = 30*BS;
-						//player.speed.Y = 5*BS;
 						player->speed.Y = 6.5 * BS;
 					}
 				}
@@ -497,14 +416,8 @@ int main() {
 				 Process environment
 				 */
 				{
-					//TimeTaker("client.step(dtime)", device);
 					client.step(dtime);
 				}
-//
-//				if (server != NULL) {
-//					//TimeTaker("server->step(dtime)", device);
-//					server->step(dtime);
-//				}
 				/*
 				 Mouse and camera control
 				 */
@@ -627,7 +540,6 @@ int main() {
 						 nodepos.X, nodepos.Y, nodepos.Z);
 						 positiontextgui->setText(positiontext);*/
 					}
-//					hilightboxes.push_back(nodefacebox);
 					if (receiver.leftclicked) {
 						std::cout << "Removing block (MapNode)" << std::endl;
 						u32 time1 = device->getTimer()->getRealTime();
@@ -675,18 +587,7 @@ int main() {
 				 Background color is choosen based on whether the player is
 				 much beyond the initial ground level
 				 */
-				/*video::SColor bgcolor;
-				 v3s16 p0 = Map::floatToInt(player->position);
-				 s16 gy = client.m_env.getMap().getGroundHeight(v2s16(p0.X, p0.Z));
-				 if(p0.Y > gy - MAP_BLOCKSIZE)
-				 bgcolor = video::SColor(255,90,140,200);
-				 else
-				 bgcolor = video::SColor(255,0,0,0);*/
 				video::SColor bgcolor = video::SColor(255, 90, 140, 200);
-//				driver->draw3DLine(camera->getAbsolutePosition(),
-//						camera->getAbsolutePosition()
-//								+ camera_direction * BS * (d + 1),
-//						video::SColor(255, 255, 255, 255));
 				driver->beginScene(true, true, bgcolor);
 				smgr->drawAll();
 				core::vector2d<s32> displaycenter(screenW / 2, screenH / 2);
@@ -700,10 +601,6 @@ int main() {
 				m.Thickness = 10;
 				m.Lighting = false;
 				driver->setMaterial(m);
-//				for (core::list<core::aabbox3d<f32> >::Iterator i =
-//						hilightboxes.begin(); i != hilightboxes.end(); i++) {
-//					driver->draw3DBox(*i, video::SColor(255, 0, 0, 0));
-//				}
 				guienv->drawAll();
 				driver->endScene();
 				/*
@@ -725,16 +622,10 @@ int main() {
 					device->setWindowCaption(str.c_str());
 					lastFPS = fps;
 				}
-				/*}
-				 else
-				 device->yield();*/
 			} // if (receiver.isPaused) {} else
 		}
 		// ----Save the map at exit-----
 		client.saveMap();
-//		server->saveMap();
-//		if (server != NULL)
-//			delete server;
 	} // client is deleted at this point
 	/*
 	 In the end, delete the Irrlicht device.

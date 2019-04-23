@@ -16,24 +16,6 @@ using namespace jthread;
 #define sleep_ms(x) usleep(x*1000)
 #endif
 
-/*
- void limitBox(core::aabbox3d<s16> & box, core::aabbox3d<s16> & limits)
- {
- if(box.MinEdge.X < limits.MinEdge.X)
- box.MinEdge.X = limits.MinEdge.X;
- if(box.MaxEdge.X > limits.MaxEdge.X)
- box.MaxEdge.X = limits.MaxEdge.X;
- if(box.MinEdge.Y < limits.MinEdge.Y)
- box.MinEdge.Y = limits.MinEdge.Y;
- if(box.MaxEdge.Y > limits.MaxEdge.Y)
- box.MaxEdge.Y = limits.MaxEdge.Y;
- if(box.MinEdge.Z < limits.MinEdge.Z)
- box.MinEdge.Z = limits.MinEdge.Z;
- if(box.MaxEdge.Z > limits.MaxEdge.Z)
- box.MaxEdge.Z = limits.MaxEdge.Z;
- }
- */
-
 void * MapUpdateThread::Thread() {
 	if (map == NULL)
 		return NULL;
@@ -48,8 +30,6 @@ void * MapUpdateThread::Thread() {
 //		map->setLoading(false);
 //	}
 	while (getRun()) {
-//		std::cout<<"##########UpdateThread running##########"<<std::endl;
-
 		bool did_something;
 		did_something = map->updateChangedVisibleArea();
 
@@ -81,7 +61,6 @@ Map::~Map() {
 	updater.setRun(false);
 	while (updater.IsRunning())
 		sleep_s(1);
-
 	/*
 	 Free all MapSectors.
 	 */
@@ -90,19 +69,13 @@ Map::~Map() {
 		MapSector *sector = i.getNode()->getValue();
 		delete sector;
 	}
+	m_nodes.clear();
 }
 
 /*
  TODO: These mutexes need rethinking. They don't work properly
  at the moment. Maybe. Or do they?
  */
-
-/*bool Map::sectorExists(v2s16 p)
- {
- JMutexAutoLock lock(m_getsector_mutex);
- core::map<v2s16, MapSector*>::Node *n = m_sectors.find(p);
- return (n != NULL);
- }*/
 MapSector * Map::getSectorNoGenerate(v2s16 p) {
 	//JMutexAutoLock lock(m_getsector_mutex);
 	if (m_sector_cache != NULL && p == m_sector_cache_p) {
@@ -798,10 +771,8 @@ void Map::renderMap(video::IVideoDriver* driver, video::SMaterial *materials) {
 	static s32 oldfacecount = 0;
 	// Cast needed for msvc
 	if (abs((long) (facecount - oldfacecount)) > 333) {
-//		std::cout << "Rendered " << facecount << " faces" << std::endl;
 		oldfacecount = facecount;
 	}
-	//std::cout<<"done"<<std::endl;
 }
 
 /*
@@ -825,16 +796,10 @@ bool Map::updateChangedVisibleArea() {
 				// -----Fetch blocks instead of creating new blocks-----
 				// -----Ignore invalid positions to avoid going out of map-----
 				try {
-					MapBlock * block = getBlockNoCreate(v3s16(x, y, z));
+					MapBlock * block = getBlock(v3s16(x, y, z));
 					if (block->getChangedFlag()) {
 						if (blocks_changed.empty() == true) {
-							// Print initial message when first is found
-//							std::cout << "Updating changed MapBlocks at ";
 						}
-//						v3s16 p = block->getPosRelative();
-//						std::cout << "(" << p.X << "," << p.Y << "," << p.Z
-//								<< ") ";
-//						std::cout.flush();
 						blocks_changed.push_back(block);
 						block->resetChangedFlag();
 					}
@@ -847,98 +812,32 @@ bool Map::updateChangedVisibleArea() {
 	}
 	// Quit if nothing has changed
 	if (blocks_changed.empty()) {
-		//status.setReady(true);
 		return false;
 	}
-//	std::cout << std::endl;
-//	std::cout << "Map::updateChangedVisibleArea(): "
-//			"there are changed blocks" << std::endl;
-	//status.setReady(false);
 	core::map<v3s16, MapBlock*> modified_blocks;
 	std::cout << "Updating lighting" << std::endl;
 	updateLighting(blocks_changed, modified_blocks);
-	/*status.setText(L"Updating face cache");
-	 status.setTodo(modified_blocks.size());
-	 status.setDone(0);*/
 	std::cout << "Updating face cache of changed blocks" << std::endl;
 	core::map<v3s16, MapBlock *>::Iterator i = modified_blocks.getIterator();
 	for (; i.atEnd() == false; i++) {
 		MapBlock *block = i.getNode()->getValue();
 		block->updateFastFaces();
-//		std::cout << "X";
-//		std::cout.flush();
-		//status.setDone(status.getDone()+1);
 	}
-//	std::cout << std::endl;
-	//status.setReady(true);
 	return true;
-}
-
-void Map::setSectors() {
-	time_t t0 = time(nullptr);
-	std::cout << "Loading map" << std::endl;
-	dout_map << "Loading map" << std::endl;
-	for (s16 z = -MAP_WIDTH; z < MAP_WIDTH; z++) {
-		for (s16 x = -MAP_LENGTH; x < MAP_LENGTH; x++) {
-			MapSector* mapSector = new MapSector(this, v2s16(x, z));
-			for (s16 y = MAP_BOTTOM; y < MAP_HEIGHT; y++) {
-				bool atBottom;
-				if (y == MAP_BOTTOM)
-					atBottom = true;
-				else
-					atBottom = false;
-				MapBlock* mapBlock = setBlockNodes(atBottom, v3s16(x, y, z));
-				mapSector->insertBlock(mapBlock);
-			}
-//			mapSector->insertBlock(
-//					getIgnoreNodesTop(v3s16(x, MAP_BOTTOM - 1, z)));
-			m_sectors.insert(v2s16(x, z), mapSector);
-		}
-	}
-	time_t t1 = time(nullptr);
-	std::cout << "Loaded map in " << difftime(t1, t0) << "ms" << std::endl;
-	dout_map << "Loaded map in " << difftime(t1, t0) << "ms" << std::endl;
-	dout_map.flush();
-}
-
-// pos is block postion
-MapBlock *Map::setBlockNodes(bool atBottom, v3s16 pos) {
-	MapBlock* mapBlock = new MapBlock(this, pos);
-	s16 minX = pos.X * MAP_BLOCKSIZE;
-	s16 minY = pos.Y * MAP_BLOCKSIZE;
-	s16 minZ = pos.Z * MAP_BLOCKSIZE;
-	for (s16 z = 0; z < MAP_BLOCKSIZE; z++) {
-		for (s16 y = 0; y < MAP_BLOCKSIZE; y++) {
-			for (s16 x = 0; x < MAP_BLOCKSIZE; x++) {
-				v3s16 nodepos = v3s16(minX + x, minY + y, minZ + z);
-				MapNode node;
-				node.param = 0;
-				if (atBottom && y == 0) {
-					// Base layer of the map is grass
-					node.d = MATERIAL_GRASS;
-					m_nodes.insert(nodepos, s16(node.d));
-				} else {
-					node.d = MATERIAL_AIR;
-				}
-				mapBlock->setNode(x, y, z, node);
-			} // for(int x=0;x<MAP_BLOCKSIZE;x++
-		} // for(int y=0;y<MAP_BLOCKSIZE;y++)
-	} // for(int z=0;z<MAP_BLOCKSIZE;z++)
-	return mapBlock;
 }
 
 void Map::addBoundary() {
 	time_t t0 = time(nullptr);
 	std::cout << "Generating boundary" << std::endl;
 	dout_map << "Generating boundary" << std::endl;
-	// alone z-axis: x at -MAP_LENGTH-1 and MAP_LENGTH
+	// alone z-axis: x at -1 and MAP_LENGTH
 	// rightmost row of nodes in the block
-	addIgnoreNodesZ(-MAP_LENGTH - 1, MAP_BLOCKSIZE - 1);
+	addIgnoreNodesZ(-1, MAP_BLOCKSIZE - 1);
 	// leftmost row of nodes in the block
 	addIgnoreNodesZ(MAP_LENGTH, 0);
-	// alone x-axis: z at -MAP_WIDTH-1 and MAP_WIDTH
+	// alone x-axis: z at -1 and MAP_WIDTH
 	// rightmost row of nodes in the block
-	addIgnoreNodesX(-MAP_WIDTH - 1, MAP_BLOCKSIZE - 1);
+	addIgnoreNodesX(-1, MAP_BLOCKSIZE - 1);
 	// leftmost row of nodes in the block
 	addIgnoreNodesX(MAP_WIDTH, 0);
 	time_t t1 = time(nullptr);
@@ -950,7 +849,7 @@ void Map::addBoundary() {
 }
 
 void Map::addIgnoreNodesZ(s16 blockX, s16 x) {
-	for (s16 blockZ = -MAP_WIDTH; blockZ < MAP_WIDTH; blockZ++) {
+	for (s16 blockZ = 0; blockZ < MAP_WIDTH; blockZ++) {
 		MapSector* mapSector = new MapSector(this, v2s16(blockX, blockZ));
 		for (s16 blockY = 0; blockY < MAP_HEIGHT; blockY++) {
 			MapBlock* mapBlock = new MapBlock(this,
@@ -967,8 +866,9 @@ void Map::addIgnoreNodesZ(s16 blockX, s16 x) {
 		m_sectors.insert(v2s16(blockX, blockZ), mapSector);
 	}
 }
+
 void Map::addIgnoreNodesX(s16 blockZ, s16 z) {
-	for (s16 blockX = -MAP_LENGTH; blockX < MAP_LENGTH; blockX++) {
+	for (s16 blockX = 0; blockX < MAP_LENGTH; blockX++) {
 		MapSector* mapSector = new MapSector(this, v2s16(blockX, blockZ));
 		for (s16 blockY = 0; blockY < MAP_HEIGHT; blockY++) {
 			MapBlock* mapBlock = new MapBlock(this,
@@ -986,20 +886,7 @@ void Map::addIgnoreNodesX(s16 blockZ, s16 z) {
 	}
 }
 
-//MapBlock* Map::getIgnoreNodesTop(v3s16 pos) {
-//	MapBlock* mapBlock = new MapBlock(this, pos);
-//	s16 y = MAP_BLOCKSIZE - 1;
-//	for (s16 z = 0; z < MAP_BLOCKSIZE; z++) {
-//		for (s16 x = 0; x < MAP_BLOCKSIZE; x++) {
-//			MapNode node;
-//			node.d = MATERIAL_IGNORE;
-//			mapBlock->setNode(x, y, z, node);
-//		}
-//	}
-//	return mapBlock;
-//}
-
-void Map::save() {
+void Map::save(const char* fname) {
 	dout_map << "Size of m_nodes:" << m_nodes.size() << std::endl;
 	std::cout << "Size of m_nodes:" << m_nodes.size() << std::endl;
 	if (m_nodes.size() > 0) {
@@ -1015,11 +902,9 @@ void Map::save() {
 			v3s16 p = i.getNode()->getKey();
 			s16 v = i.getNode()->getValue();
 			// -----air node and base level nodes will not be saved-----
-			if (p.X >= (-MAP_LENGTH * MAP_BLOCKSIZE)
-					&& p.X < (MAP_LENGTH * MAP_BLOCKSIZE)
-					&& p.Y > -MAP_BOTTOM * MAP_BLOCKSIZE
-					&& p.Y < MAP_HEIGHT * MAP_BLOCKSIZE
-					&& p.Z >= (-MAP_WIDTH * MAP_BLOCKSIZE)
+			if (p.X >= 0 && p.X < (MAP_LENGTH * MAP_BLOCKSIZE)
+					&& p.Y > MAP_BOTTOM * MAP_BLOCKSIZE
+					&& p.Y < MAP_HEIGHT * MAP_BLOCKSIZE && p.Z >= 0
 					&& p.Z < (MAP_WIDTH * MAP_BLOCKSIZE)) {
 				Json::Value node;
 				Json::Value pos;
@@ -1034,7 +919,7 @@ void Map::save() {
 		}
 		dout_map << "# nodes saved: " << node_count << std::endl;
 		std::cout << "# nodes saved: " << node_count << std::endl;
-		std::ofstream ofs("created_nodes.json");
+		std::ofstream ofs(fname);
 		writer->write(map, &ofs);
 		time_t t1 = time(nullptr);
 		dout_map << "Saved map in " << difftime(t1, t0) << "ms" << std::endl;
@@ -1048,8 +933,8 @@ void Map::save() {
 
 }
 
-void Map::addCreatedNodes() {
-	std::ifstream ifs("created_nodes.json");
+void Map::loadCreatedNodes(const char* fname) {
+	std::ifstream ifs(fname);
 	if (ifs) {
 		Json::CharReaderBuilder reader;
 		Json::Value map;
@@ -1064,9 +949,6 @@ void Map::addCreatedNodes() {
 					pos[2].asInt());
 			s16 d = (*i)["1"].asInt();
 			m_nodes.insert(nodePos, d);
-			MapNode n;
-			n.d = d;
-			setNode(nodePos, n);
 		}
 		time_t t1 = time(nullptr);
 		dout_map << "Loaded nodes in " << difftime(t1, t0) << "ms" << std::endl;
@@ -1076,21 +958,85 @@ void Map::addCreatedNodes() {
 	} else {
 		std::cout << "File does not exist" << std::endl;
 	}
+}
 
+// -----Generate the nodes of a block-----
+// -----This is done through c/s connection in Minetest NMPR-----
+MapBlock *Map::fillBlockNodes(v3s16 pos) { // maybe -> MapSector::getBlockNodes(s16 y)
+	MapBlock* mapBlock = new MapBlock(this, pos);
+	for (s16 z = 0; z < MAP_BLOCKSIZE; z++) {
+		for (s16 y = 0; y < MAP_BLOCKSIZE; y++) {
+			for (s16 x = 0; x < MAP_BLOCKSIZE; x++) {
+				s16 minX = pos.X * MAP_BLOCKSIZE;
+				s16 minY = pos.Y * MAP_BLOCKSIZE;
+				s16 minZ = pos.Z * MAP_BLOCKSIZE;
+				v3s16 nodepos = v3s16(minX + x, minY + y, minZ + z);
+				MapNode node;
+				if (nodepos.Y == MAP_BOTTOM) {
+					node.d = MATERIAL_GRASS;
+				} else {
+					core::map<v3s16, s16>::Node *n = m_nodes.find(nodepos);
+					if (n != NULL) {
+						node.d = (n->getValue());
+					} else {
+						node.d = MATERIAL_AIR;
+					}
+				}
+				mapBlock->setNode(x, y, z, node);
+			} // for(int x=0;x<MAP_BLOCKSIZE;x++
+		} // for(int y=0;y<MAP_BLOCKSIZE;y++)
+	} // for(int z=0;z<MAP_BLOCKSIZE;z++)
+	return mapBlock;
+}
+
+MapSector* Map::fillSector(v2s16 pos) {
+	if ((pos.X >= 0) && (pos.X < MAP_LENGTH) && (pos.Y >= 0)
+			&& (pos.Y < MAP_WIDTH)) {
+		time_t t0 = time(nullptr);
+		MapSector* mapSector = new MapSector(this, pos);
+		for (s16 y = 0; y < MAP_HEIGHT; y++) {
+			MapBlock* mapBlock = fillBlockNodes(v3s16(pos.X, y, pos.Y));
+			mapSector->insertBlock(mapBlock);
+		}
+		m_sectors.insert(v2s16(pos.X, pos.Y), mapSector);
+		time_t t1 = time(nullptr);
+		std::cout << "#####Map::fillSector(v2s16 pos) loaded sector at ("
+				<< pos.X << "," << pos.Y << ") in " << difftime(t1, t0) << "ms"
+				<< std::endl;
+		return mapSector;
+	}
+	return nullptr;
+}
+
+MapSector * Map::getSector(v2s16 pos) {
+	// Check that it doesn't exist already
+	try {
+		MapSector *sector = getSectorNoGenerate(pos);
+		return sector;
+	} catch (InvalidPositionException &e) {
+
+	}
+	MapSector* mapSector = fillSector(pos);
+	return mapSector;
+}
+
+MapBlock * Map::getBlock(v3s16 pos) {
+	try {
+		MapBlock * block = getBlockNoCreate(pos);
+		return block;
+	} catch (InvalidPositionException &e) {
+	}
+	// -----Don't add anything outside border-----
+	v2s16 sectorPos(pos.X, pos.Z);
+	// -----This will generate a new sector and fill all nodes-----
+	getSector(sectorPos);
+	return getBlockNoCreate(pos);
 }
 
 ClientMap::ClientMap(Client *client, video::SMaterial *materials,
 		scene::ISceneNode* parent, scene::ISceneManager* mgr, s32 id) :
 		scene::ISceneNode(parent, mgr, id), m_client(client), m_materials(
 				materials) {
-	/*m_box = core::aabbox3d<f32>(0,0,0,
-	 map->getW()*BS, map->getH()*BS, map->getD()*BS);*/
-	/*m_box = core::aabbox3d<f32>(0,0,0,
-	 map->getSizeNodes().X * BS,
-	 map->getSizeNodes().Y * BS,
-	 map->getSizeNodes().Z * BS);*/
-	//m_box = core::aabbox3d<f32>(-BS * 1000000, -BS * 1000000, -BS * 1000000,
-	//	BS * 1000000, BS * 1000000, BS * 1000000);
 	m_box = core::aabbox3d<f32>(-BS * 1000, -BS * 1000, -BS * 1000,
 	BS * 1000, BS * 1000, BS * 1000);
 }
