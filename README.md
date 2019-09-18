@@ -22,7 +22,7 @@ These changes are necessary to fix build errors
 
  - Download JThread, Irrlicht and JsonCpp source file
  - Use CMake to build JThread makefile
- - Run the makefile (Use msys on MinGW or GUN Make)
+ - Run the makefile (Use msys on MinGW or GNU Make)
  - Use Code::Block to build Irrlicht win32-gcc version .a and .dll files
  - Follow [the guide](https://github.com/open-source-parsers/jsoncpp/wiki/Amalgamated) to build JsonCpp amalgamated source and add it to the project
  - Add **Irrlicht.dll** and **libjthread.dll** to the output folder that contains the .exe file after building the project
